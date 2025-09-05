@@ -38,7 +38,7 @@ export default function ActivityTracker() {
         // Use sample data when Supabase is not configured
         const sampleProjects: Project[] = [
           {
-            id: '1',
+            id: '1', user_id: 'user1',
             title: 'Website Redesign',
             description: 'Complete redesign of company website with modern UI/UX',
             domain: 'Business',
@@ -50,7 +50,7 @@ export default function ActivityTracker() {
             updated_at: '2025-09-05T00:00:00Z'
           },
           {
-            id: '2',
+            id: '2', user_id: 'user1',
             title: 'Property Investment Analysis',
             description: 'Research and analysis for potential property investments in Sydney',
             domain: 'Property',
@@ -62,7 +62,7 @@ export default function ActivityTracker() {
             updated_at: '2025-09-05T00:00:00Z'
           },
           {
-            id: '3',
+            id: '3', user_id: 'user1',
             title: 'Family Vacation Planning',
             description: 'Plan and organize summer vacation for the family',
             domain: 'Family',
@@ -74,7 +74,7 @@ export default function ActivityTracker() {
             updated_at: '2025-09-05T00:00:00Z'
           },
           {
-            id: '4',
+            id: '4', user_id: 'user1',
             title: 'Mobile App Development',
             description: 'Develop a new mobile application for task management',
             domain: 'Creative',
@@ -86,7 +86,7 @@ export default function ActivityTracker() {
             updated_at: '2025-09-05T00:00:00Z'
           },
           {
-            id: '5',
+            id: '5', user_id: 'user1',
             title: 'Health & Fitness Program',
             description: 'Start a comprehensive health and fitness routine',
             domain: 'Health',
@@ -125,8 +125,8 @@ export default function ActivityTracker() {
         // Use sample data when Supabase is not configured
         const sampleTasks: Task[] = [
           {
-            id: '1',
-            project_id: '1',
+            id: '1', user_id: 'user1',
+            project_id: '1', user_id: 'user1',
             title: 'Design wireframes',
             description: 'Create wireframes for all main pages',
             completed: true,
@@ -137,8 +137,8 @@ export default function ActivityTracker() {
             updated_at: '2025-09-05T00:00:00Z'
           },
           {
-            id: '2',
-            project_id: '1',
+            id: '2', user_id: 'user1',
+            project_id: '1', user_id: 'user1',
             title: 'Develop homepage',
             description: 'Code the new homepage design',
             completed: false,
@@ -149,8 +149,8 @@ export default function ActivityTracker() {
             updated_at: '2025-09-05T00:00:00Z'
           },
           {
-            id: '3',
-            project_id: '1',
+            id: '3', user_id: 'user1',
+            project_id: '1', user_id: 'user1',
             title: 'Test responsive design',
             description: 'Test website on various devices',
             completed: false,
@@ -161,8 +161,8 @@ export default function ActivityTracker() {
             updated_at: '2025-09-05T00:00:00Z'
           },
           {
-            id: '4',
-            project_id: '2',
+            id: '4', user_id: 'user1',
+            project_id: '2', user_id: 'user1',
             title: 'Market research',
             description: 'Research property market trends',
             completed: false,
@@ -173,8 +173,8 @@ export default function ActivityTracker() {
             updated_at: '2025-09-05T00:00:00Z'
           },
           {
-            id: '5',
-            project_id: '3',
+            id: '5', user_id: 'user1',
+            project_id: '3', user_id: 'user1',
             title: 'Book flights',
             description: 'Find and book flights for vacation',
             completed: true,
@@ -186,7 +186,7 @@ export default function ActivityTracker() {
           },
           {
             id: '6',
-            project_id: '3',
+            project_id: '3', user_id: 'user1',
             title: 'Reserve accommodation',
             description: 'Book hotel or vacation rental',
             completed: false,
@@ -198,7 +198,7 @@ export default function ActivityTracker() {
           },
           {
             id: '7',
-            project_id: '4',
+            project_id: '4', user_id: 'user1',
             title: 'UI/UX Design',
             description: 'Design app interface and user experience',
             completed: true,
@@ -210,7 +210,7 @@ export default function ActivityTracker() {
           },
           {
             id: '8',
-            project_id: '4',
+            project_id: '4', user_id: 'user1',
             title: 'Backend API Development',
             description: 'Develop REST API for the mobile app',
             completed: false,
