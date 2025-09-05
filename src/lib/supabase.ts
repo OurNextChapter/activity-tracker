@@ -19,7 +19,7 @@ export interface Project {
   domain: 'Business' | 'Property' | 'Family' | 'Creative' | 'Health'
   priority: 'Critical' | 'High' | 'Medium' | 'Low'
   status: 'Not Started' | 'In Progress' | 'Completed' | 'Blocked'
-  urgency: 'Immediate' | 'This Week' | 'This Month' | 'Ongoing'
+  urgency: 'Immediate' | 'This Week' | 'This Month' | 'Ongoing'| 'Medium'
   due_date: string | null
   user_id: string
 }
