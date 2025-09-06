@@ -32,6 +32,7 @@ export interface Project {
   urgency: 'Low' | 'Medium' | 'High'
   status: string
   due_date: string | null
+  archived: boolean
   created_at: string
   updated_at: string
 }
@@ -42,6 +43,7 @@ export interface Task {
   title: string
   description: string | null
   completed: boolean
+  archived: boolean
   order_index: number
   document_url: string | null
   document_name: string | null
