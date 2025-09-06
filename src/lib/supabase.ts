@@ -1,0 +1,64 @@
+import { createClient } from '@supabase/supabase-js'
+
+// Check if we have valid Supabase credentials
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+// Create a real or mock Supabase client
+export const supabase = (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your_supabase_project_url') 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : {
+      from: (table: string) => ({
+        select: () => ({
+          order: () => ({
+            then: (callback: any) => callback({ data: [], error: null })
+          })
+        }),
+        update: () => ({
+          eq: () => ({
+            then: (callback: any) => callback({ error: null })
+          })
+        })
+      })
+    }
+
+// TypeScript interfaces for database tables
+export interface Project {
+  id: string
+  title: string
+  description: string
+  domain: string
+  priority: string
+  urgency: string
+  status: string
+  due_date: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Task {
+  id: string
+  project_id: string
+  title: string
+  description: string | null
+  completed: boolean
+  order_index: number
+  document_url: string | null
+  document_name: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CalendarEvent {
+  id: string
+  title: string
+  description: string | null
+  start_time: string
+  end_time: string
+  location: string | null
+  attendees: string[] | null
+  microsoft_event_id: string | null
+  created_at: string
+  updated_at: string
+}
+
