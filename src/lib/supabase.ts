@@ -14,9 +14,18 @@ export const supabase = (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your
             then: (callback: (result: { data: unknown[]; error: null }) => void) => callback({ data: [], error: null })
           })
         }),
+        insert: () => ({
+          select: () => ({
+            single: () => ({
+              then: (callback: (result: { data: null; error: { message: string } }) => void) => 
+                callback({ data: null, error: { message: 'Mock Supabase - not configured' } })
+            })
+          })
+        }),
         update: () => ({
           eq: () => ({
-            then: (callback: (result: { error: null }) => void) => callback({ error: null })
+            then: (callback: (result: { error: { message: string } }) => void) => 
+              callback({ error: { message: 'Mock Supabase - not configured' } })
           })
         })
       })

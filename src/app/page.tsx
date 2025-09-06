@@ -77,9 +77,46 @@ export default function ActivityTracker() {
     return null
   }
 
+  // Domain mapping functions for Supabase integration
+  const mapDomainForStorage = (domain: string): string => {
+    // Map SJT to Family for Supabase storage
+    return domain === 'SJT' ? 'Family' : domain
+  }
+
+  const mapDomainFromStorage = (domain: string): string => {
+    // Keep Family as Family when loading from Supabase
+    // This allows both SJT and Family projects to coexist
+    return domain
+  }
+
   const fetchProjects = async () => {
     try {
-      // First try to load from localStorage
+      // Check if Supabase is properly configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        // Try to fetch from Supabase first
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .order('order_index', { ascending: true })
+        
+        if (!error && data) {
+          // Map domains from storage and set projects
+          const mappedProjects = (data as Project[]).map(project => ({
+            ...project,
+            domain: mapDomainFromStorage(project.domain)
+          }))
+          setProjects(mappedProjects)
+          // Also save to localStorage as cache
+          saveToLocalStorage('activity-tracker-projects', mappedProjects)
+          setLoading(false)
+          return
+        } else {
+          console.log('Supabase fetch failed, trying localStorage:', error)
+        }
+      }
+
+      // Fallback to localStorage
       const savedProjects = loadFromLocalStorage('activity-tracker-projects')
       if (savedProjects && savedProjects.length > 0) {
         setProjects(savedProjects)
@@ -87,11 +124,8 @@ export default function ActivityTracker() {
         return
       }
 
-      // Check if Supabase is properly configured
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      if (!supabaseUrl || supabaseUrl === 'your_supabase_project_url') {
-        // Use sample data when Supabase is not configured
-        const sampleProjects: Project[] = [
+      // Final fallback to sample data
+      const sampleProjects: Project[] = [
           {
             id: '1',
             title: 'Website Redesign',
@@ -166,18 +200,13 @@ export default function ActivityTracker() {
         setProjects(sampleProjects)
         saveToLocalStorage('activity-tracker-projects', sampleProjects)
         setLoading(false)
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('priority', { ascending: false })
-      
-      if (error) throw error
-      setProjects((data as Project[]) || [])
     } catch (error) {
       console.error('Error fetching projects:', error)
+      // On error, try localStorage as final fallback
+      const savedProjects = loadFromLocalStorage('activity-tracker-projects')
+      if (savedProjects && savedProjects.length > 0) {
+        setProjects(savedProjects)
+      }
     } finally {
       setLoading(false)
     }
@@ -461,10 +490,44 @@ export default function ActivityTracker() {
   // New helper functions for project and task management
   const addProject = async (projectData: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'order_index'>) => {
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        // Create project data for Supabase with domain mapping
+        const supabaseProjectData = {
+          ...projectData,
+          domain: mapDomainForStorage(projectData.domain), // Map SJT → Family
+          order_index: projects.length,
+          user_id: '00000000-0000-0000-0000-000000000000' // Default user ID for now
+        }
+
+        const { data, error } = await supabase
+          .from('projects')
+          .insert([supabaseProjectData])
+          .select()
+          .single()
+
+        if (!error && data) {
+          // Map domain back for UI display and add to state
+          const newProject: Project = {
+            ...data,
+            domain: mapDomainFromStorage(data.domain)
+          }
+          const updatedProjects = [...projects, newProject]
+          setProjects(updatedProjects)
+          saveToLocalStorage('activity-tracker-projects', updatedProjects)
+          setShowAddProject(false)
+          return
+        } else {
+          console.error('Supabase insert failed:', error)
+        }
+      }
+
+      // Fallback to localStorage-only mode
       const newProject: Project = {
         ...projectData,
-        id: Date.now().toString(), // Simple ID generation for sample data
-        order_index: projects.length, // Add to end of list
+        id: Date.now().toString(),
+        order_index: projects.length,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
@@ -480,6 +543,20 @@ export default function ActivityTracker() {
 
   const archiveProject = async (projectId: string) => {
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('projects')
+          .update({ archived: true, updated_at: new Date().toISOString() })
+          .eq('id', projectId)
+
+        if (error) {
+          console.error('Supabase archive failed:', error)
+        }
+      }
+
+      // Update local state regardless of Supabase success/failure
       const updatedProjects = projects.map(p => 
         p.id === projectId ? { ...p, archived: true, updated_at: new Date().toISOString() } : p
       )
@@ -492,6 +569,20 @@ export default function ActivityTracker() {
 
   const unarchiveProject = async (projectId: string) => {
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('projects')
+          .update({ archived: false, updated_at: new Date().toISOString() })
+          .eq('id', projectId)
+
+        if (error) {
+          console.error('Supabase unarchive failed:', error)
+        }
+      }
+
+      // Update local state regardless of Supabase success/failure
       const updatedProjects = projects.map(p => 
         p.id === projectId ? { ...p, archived: false, updated_at: new Date().toISOString() } : p
       )
@@ -515,6 +606,23 @@ export default function ActivityTracker() {
     }
 
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('projects')
+          .update({ 
+            title: editingProjectName.trim(), 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', projectId)
+
+        if (error) {
+          console.error('Supabase update failed:', error)
+        }
+      }
+
+      // Update local state regardless of Supabase success/failure
       const updatedProjects = projects.map(p => p.id === projectId ? { 
         ...p, 
         title: editingProjectName.trim(), 
