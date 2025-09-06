@@ -51,6 +51,17 @@ export interface Task {
   updated_at: string
 }
 
+export interface AdHocTask {
+  id: string
+  title: string
+  description: string | null
+  completed: boolean
+  archived: boolean
+  category: 'daily' | 'weekly' | 'monthly'
+  created_at: string
+  updated_at: string
+}
+
 export interface CalendarEvent {
   id: string
   title: string

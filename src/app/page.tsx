@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase, Project, Task } from '@/lib/supabase'
+import { supabase, Project, Task, AdHocTask } from '@/lib/supabase'
 
 export default function ActivityTracker() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [projects, setProjects] = useState<Project[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
+  const [adHocTasks, setAdHocTasks] = useState<AdHocTask[]>([])
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [selectedTimezone, setSelectedTimezone] = useState('Sydney')
@@ -14,9 +15,16 @@ export default function ActivityTracker() {
   // Modal states
   const [showAddProject, setShowAddProject] = useState(false)
   const [showAddTask, setShowAddTask] = useState(false)
+  const [showAddAdHocTask, setShowAddAdHocTask] = useState(false)
   const [selectedProjectId, setSelectedProjectId] = useState<string>('')
+  const [selectedAdHocCategory, setSelectedAdHocCategory] = useState<'daily' | 'weekly' | 'monthly'>('daily')
   const [showArchived, setShowArchived] = useState(false)
   const [showArchivedTasks, setShowArchivedTasks] = useState<{[key: string]: boolean}>({})
+  const [showArchivedAdHocTasks, setShowArchivedAdHocTasks] = useState<{[key: string]: boolean}>({
+    daily: false,
+    weekly: false,
+    monthly: false
+  })
   
   // Inline editing states
   const [editingProjectId, setEditingProjectId] = useState<string>('')
@@ -37,6 +45,7 @@ export default function ActivityTracker() {
   useEffect(() => {
     fetchProjects()
     fetchTasks()
+    fetchAdHocTasks()
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
@@ -261,6 +270,90 @@ export default function ActivityTracker() {
     }
   }
 
+  const fetchAdHocTasks = async () => {
+    try {
+      // Check if Supabase is properly configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (!supabaseUrl || supabaseUrl === 'your_supabase_project_url') {
+        // Use sample data when Supabase is not configured
+        const sampleAdHocTasks: AdHocTask[] = [
+          {
+            id: 'ah1',
+            title: 'Review morning emails',
+            description: 'Check and respond to important emails',
+            completed: false,
+            archived: false,
+            category: 'daily',
+            created_at: '2025-09-06T00:00:00Z',
+            updated_at: '2025-09-06T00:00:00Z'
+          },
+          {
+            id: 'ah2',
+            title: 'Call dentist for appointment',
+            description: 'Schedule routine dental checkup',
+            completed: true,
+            archived: false,
+            category: 'daily',
+            created_at: '2025-09-06T00:00:00Z',
+            updated_at: '2025-09-06T00:00:00Z'
+          },
+          {
+            id: 'ah3',
+            title: 'Weekly grocery shopping',
+            description: 'Buy groceries for the week',
+            completed: false,
+            archived: false,
+            category: 'weekly',
+            created_at: '2025-09-01T00:00:00Z',
+            updated_at: '2025-09-06T00:00:00Z'
+          },
+          {
+            id: 'ah4',
+            title: 'Plan weekend activities',
+            description: 'Research and plan family weekend activities',
+            completed: false,
+            archived: false,
+            category: 'weekly',
+            created_at: '2025-09-01T00:00:00Z',
+            updated_at: '2025-09-06T00:00:00Z'
+          },
+          {
+            id: 'ah5',
+            title: 'Review monthly budget',
+            description: 'Analyze spending and adjust budget for next month',
+            completed: false,
+            archived: false,
+            category: 'monthly',
+            created_at: '2025-09-01T00:00:00Z',
+            updated_at: '2025-09-06T00:00:00Z'
+          },
+          {
+            id: 'ah6',
+            title: 'Update insurance policies',
+            description: 'Review and update home and car insurance',
+            completed: false,
+            archived: false,
+            category: 'monthly',
+            created_at: '2025-08-01T00:00:00Z',
+            updated_at: '2025-09-06T00:00:00Z'
+          }
+        ]
+        setAdHocTasks(sampleAdHocTasks)
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('adhoc_tasks')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setAdHocTasks((data as AdHocTask[]) || [])
+    } catch (error) {
+      console.error('Error fetching ad hoc tasks:', error)
+    }
+  }
+
   const toggleTask = async (taskId: string, completed: boolean) => {
     try {
       const { error } = await supabase
@@ -423,6 +516,59 @@ export default function ActivityTracker() {
     }
   }
 
+  // Ad hoc task management functions
+  const addAdHocTask = async (taskData: Omit<AdHocTask, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const newTask: AdHocTask = {
+        ...taskData,
+        id: Date.now().toString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      setAdHocTasks(prev => [newTask, ...prev])
+      setShowAddAdHocTask(false)
+    } catch (error) {
+      console.error('Error adding ad hoc task:', error)
+    }
+  }
+
+  const toggleAdHocTask = async (taskId: string, completed: boolean) => {
+    try {
+      setAdHocTasks(prev => 
+        prev.map(t => t.id === taskId ? { ...t, completed: !completed, updated_at: new Date().toISOString() } : t)
+      )
+    } catch (error) {
+      console.error('Error updating ad hoc task:', error)
+    }
+  }
+
+  const archiveAdHocTask = async (taskId: string) => {
+    try {
+      setAdHocTasks(prev => 
+        prev.map(t => t.id === taskId ? { ...t, archived: true, updated_at: new Date().toISOString() } : t)
+      )
+    } catch (error) {
+      console.error('Error archiving ad hoc task:', error)
+    }
+  }
+
+  const unarchiveAdHocTask = async (taskId: string) => {
+    try {
+      setAdHocTasks(prev => 
+        prev.map(t => t.id === taskId ? { ...t, archived: false, updated_at: new Date().toISOString() } : t)
+      )
+    } catch (error) {
+      console.error('Error unarchiving ad hoc task:', error)
+    }
+  }
+
+  const getAdHocTasksByCategory = (category: 'daily' | 'weekly' | 'monthly', includeArchived = false) => {
+    return adHocTasks.filter(task => 
+      task.category === category && (includeArchived || !task.archived)
+    )
+  }
+
   const formatTime = (timezone: string) => {
     return currentTime.toLocaleTimeString('en-US', {
       timeZone: timezones[timezone as keyof typeof timezones],
@@ -491,7 +637,7 @@ export default function ActivityTracker() {
       <nav className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
-            {['dashboard', 'daily', 'weekly', 'monthly', 'projects', 'all-tasks'].map((tab) => (
+            {['dashboard', 'daily', 'weekly', 'monthly', 'project-tasks', 'projects'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -501,7 +647,7 @@ export default function ActivityTracker() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                {tab === 'all-tasks' ? 'All Tasks' : tab}
+                {tab === 'project-tasks' ? 'Project Tasks' : tab}
               </button>
             ))}
           </div>
@@ -699,6 +845,75 @@ export default function ActivityTracker() {
                     setShowAddTask(false)
                     setSelectedProjectId('')
                   }}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Add Task
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Ad Hoc Task Modal */}
+      {showAddAdHocTask && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Add {selectedAdHocCategory.charAt(0).toUpperCase() + selectedAdHocCategory.slice(1)} Task</h2>
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.currentTarget)
+              addAdHocTask({
+                title: formData.get('title') as string,
+                description: formData.get('description') as string || null,
+                completed: false,
+                archived: false,
+                category: selectedAdHocCategory
+              })
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+                  <input
+                    type="text"
+                    name="title"
+                    required
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Task title"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                  <textarea
+                    name="description"
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Task description"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    value={selectedAdHocCategory}
+                    onChange={(e) => setSelectedAdHocCategory(e.target.value as 'daily' | 'weekly' | 'monthly')}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowAddAdHocTask(false)}
                   className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
                 >
                   Cancel
@@ -976,32 +1191,248 @@ export default function ActivityTracker() {
 
         {/* Other Tab Views */}
         {activeTab === 'daily' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Daily View</h2>
-            <p className="text-gray-600">Daily task management and scheduling coming soon...</p>
+          <div className="space-y-8">
+            {/* Daily Tasks Header */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Daily Tasks</h2>
+                <p className="text-gray-600 mt-1">Manage your daily ad hoc tasks and quick to-dos</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setShowArchivedAdHocTasks(prev => ({ ...prev, daily: !prev.daily }))}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    showArchivedAdHocTasks.daily 
+                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {showArchivedAdHocTasks.daily ? 'Hide Archived' : 'Show Archived'}
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedAdHocCategory('daily')
+                    setShowAddAdHocTask(true)
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                >
+                  + Add Daily Task
+                </button>
+              </div>
+            </div>
+
+            {/* Daily Tasks List */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="space-y-4">
+                {getAdHocTasksByCategory('daily', showArchivedAdHocTasks.daily).length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No daily tasks yet. Add your first daily task to get started!</p>
+                  </div>
+                ) : (
+                  getAdHocTasksByCategory('daily', showArchivedAdHocTasks.daily).map((task) => (
+                    <div key={task.id} className={`flex items-center space-x-3 p-3 rounded-lg border ${task.archived ? 'opacity-75 bg-gray-50' : 'bg-white hover:bg-gray-50'} transition-colors`}>
+                      <input
+                        type="checkbox"
+                        checked={task.completed}
+                        onChange={() => toggleAdHocTask(task.id, task.completed)}
+                        disabled={task.archived}
+                        className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
+                      />
+                      <div className="flex-1">
+                        <h4 className={`font-medium ${task.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                          {task.title}
+                        </h4>
+                        {task.description && (
+                          <p className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
+                            {task.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => task.archived ? unarchiveAdHocTask(task.id) : archiveAdHocTask(task.id)}
+                          className={`text-sm font-medium ${
+                            task.archived 
+                              ? 'text-green-600 hover:text-green-800' 
+                              : 'text-gray-600 hover:text-gray-800'
+                          }`}
+                          title={task.archived ? 'Unarchive Task' : 'Archive Task'}
+                        >
+                          {task.archived ? '↶' : '🗃️'}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
 
         {activeTab === 'weekly' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Weekly View</h2>
-            <p className="text-gray-600">Weekly planning and calendar integration coming soon...</p>
+          <div className="space-y-8">
+            {/* Weekly Tasks Header */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Weekly Tasks</h2>
+                <p className="text-gray-600 mt-1">Manage your weekly planning and recurring tasks</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setShowArchivedAdHocTasks(prev => ({ ...prev, weekly: !prev.weekly }))}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    showArchivedAdHocTasks.weekly 
+                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {showArchivedAdHocTasks.weekly ? 'Hide Archived' : 'Show Archived'}
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedAdHocCategory('weekly')
+                    setShowAddAdHocTask(true)
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                >
+                  + Add Weekly Task
+                </button>
+              </div>
+            </div>
+
+            {/* Weekly Tasks List */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="space-y-4">
+                {getAdHocTasksByCategory('weekly', showArchivedAdHocTasks.weekly).length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No weekly tasks yet. Add your first weekly task to get started!</p>
+                  </div>
+                ) : (
+                  getAdHocTasksByCategory('weekly', showArchivedAdHocTasks.weekly).map((task) => (
+                    <div key={task.id} className={`flex items-center space-x-3 p-3 rounded-lg border ${task.archived ? 'opacity-75 bg-gray-50' : 'bg-white hover:bg-gray-50'} transition-colors`}>
+                      <input
+                        type="checkbox"
+                        checked={task.completed}
+                        onChange={() => toggleAdHocTask(task.id, task.completed)}
+                        disabled={task.archived}
+                        className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
+                      />
+                      <div className="flex-1">
+                        <h4 className={`font-medium ${task.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                          {task.title}
+                        </h4>
+                        {task.description && (
+                          <p className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
+                            {task.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => task.archived ? unarchiveAdHocTask(task.id) : archiveAdHocTask(task.id)}
+                          className={`text-sm font-medium ${
+                            task.archived 
+                              ? 'text-green-600 hover:text-green-800' 
+                              : 'text-gray-600 hover:text-gray-800'
+                          }`}
+                          title={task.archived ? 'Unarchive Task' : 'Archive Task'}
+                        >
+                          {task.archived ? '↶' : '🗃️'}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
 
         {activeTab === 'monthly' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Monthly View</h2>
-            <p className="text-gray-600">Monthly overview and long-term planning coming soon...</p>
+          <div className="space-y-8">
+            {/* Monthly Tasks Header */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Monthly Tasks</h2>
+                <p className="text-gray-600 mt-1">Manage your monthly goals and long-term planning</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setShowArchivedAdHocTasks(prev => ({ ...prev, monthly: !prev.monthly }))}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    showArchivedAdHocTasks.monthly 
+                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {showArchivedAdHocTasks.monthly ? 'Hide Archived' : 'Show Archived'}
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedAdHocCategory('monthly')
+                    setShowAddAdHocTask(true)
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                >
+                  + Add Monthly Task
+                </button>
+              </div>
+            </div>
+
+            {/* Monthly Tasks List */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="space-y-4">
+                {getAdHocTasksByCategory('monthly', showArchivedAdHocTasks.monthly).length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No monthly tasks yet. Add your first monthly task to get started!</p>
+                  </div>
+                ) : (
+                  getAdHocTasksByCategory('monthly', showArchivedAdHocTasks.monthly).map((task) => (
+                    <div key={task.id} className={`flex items-center space-x-3 p-3 rounded-lg border ${task.archived ? 'opacity-75 bg-gray-50' : 'bg-white hover:bg-gray-50'} transition-colors`}>
+                      <input
+                        type="checkbox"
+                        checked={task.completed}
+                        onChange={() => toggleAdHocTask(task.id, task.completed)}
+                        disabled={task.archived}
+                        className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
+                      />
+                      <div className="flex-1">
+                        <h4 className={`font-medium ${task.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                          {task.title}
+                        </h4>
+                        {task.description && (
+                          <p className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
+                            {task.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => task.archived ? unarchiveAdHocTask(task.id) : archiveAdHocTask(task.id)}
+                          className={`text-sm font-medium ${
+                            task.archived 
+                              ? 'text-green-600 hover:text-green-800' 
+                              : 'text-gray-600 hover:text-gray-800'
+                          }`}
+                          title={task.archived ? 'Unarchive Task' : 'Archive Task'}
+                        >
+                          {task.archived ? '↶' : '🗃️'}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
 
-        {activeTab === 'all-tasks' && (
+        {activeTab === 'project-tasks' && (
           <div className="space-y-8">
-            {/* All Tasks Header */}
+            {/* Project Tasks Header */}
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">All Tasks</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Project Tasks</h2>
                 <p className="text-gray-600 mt-1">View all open tasks organized by project</p>
               </div>
               <button
