@@ -109,7 +109,7 @@ export default function ActivityTracker() {
         .order('priority', { ascending: false })
       
       if (error) throw error
-      setProjects(data || [])
+      setProjects((data as Project[]) || [])
     } catch (error) {
       console.error('Error fetching projects:', error)
     } finally {
@@ -231,7 +231,7 @@ export default function ActivityTracker() {
         .order('order_index', { ascending: true })
       
       if (error) throw error
-      setTasks(data || [])
+      setTasks((data as Task[]) || [])
     } catch (error) {
       console.error('Error fetching tasks:', error)
     }

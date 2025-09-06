@@ -19,8 +19,20 @@ interface CalendarIntegrationProps {
 export default function CalendarIntegration({ className = '' }: CalendarIntegrationProps) {
   const [isInitialized, setIsInitialized] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [events, setEvents] = useState<any[]>([])
+  const [user, setUser] = useState<{ 
+    name?: string; 
+    email?: string; 
+    displayName?: string; 
+    mail?: string; 
+    userPrincipalName?: string; 
+  } | null>(null)
+  const [events, setEvents] = useState<{ 
+    id?: string; 
+    subject: string; 
+    start: { dateTime: string }; 
+    end: { dateTime: string }; 
+    location?: { displayName?: string };
+  }[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

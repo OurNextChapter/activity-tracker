@@ -8,15 +8,15 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 export const supabase = (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your_supabase_project_url') 
   ? createClient(supabaseUrl, supabaseAnonKey)
   : {
-      from: (table: string) => ({
+      from: () => ({
         select: () => ({
           order: () => ({
-            then: (callback: any) => callback({ data: [], error: null })
+            then: (callback: (result: { data: unknown[]; error: null }) => void) => callback({ data: [], error: null })
           })
         }),
         update: () => ({
           eq: () => ({
-            then: (callback: any) => callback({ error: null })
+            then: (callback: (result: { error: null }) => void) => callback({ error: null })
           })
         })
       })
@@ -29,7 +29,7 @@ export interface Project {
   description: string
   domain: string
   priority: string
-  urgency: string
+  urgency: 'Low' | 'Medium' | 'High'
   status: string
   due_date: string | null
   created_at: string
