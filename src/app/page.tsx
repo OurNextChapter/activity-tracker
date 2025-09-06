@@ -17,6 +17,10 @@ export default function ActivityTracker() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('')
   const [showArchived, setShowArchived] = useState(false)
   const [showArchivedTasks, setShowArchivedTasks] = useState<{[key: string]: boolean}>({})
+  
+  // Inline editing states
+  const [editingProjectId, setEditingProjectId] = useState<string>('')
+  const [editingProjectName, setEditingProjectName] = useState<string>('')
 
   const timezones = {
     Sydney: 'Australia/Sydney',
@@ -337,6 +341,48 @@ export default function ActivityTracker() {
       )
     } catch (error) {
       console.error('Error unarchiving project:', error)
+    }
+  }
+
+  // Inline editing functions
+  const startEditingProject = (projectId: string, currentName: string) => {
+    setEditingProjectId(projectId)
+    setEditingProjectName(currentName)
+  }
+
+  const saveProjectName = async (projectId: string) => {
+    if (!editingProjectName.trim()) {
+      cancelEditingProject()
+      return
+    }
+
+    try {
+      setProjects(prev => 
+        prev.map(p => p.id === projectId ? { 
+          ...p, 
+          title: editingProjectName.trim(), 
+          updated_at: new Date().toISOString() 
+        } : p)
+      )
+      setEditingProjectId('')
+      setEditingProjectName('')
+    } catch (error) {
+      console.error('Error updating project name:', error)
+    }
+  }
+
+  const cancelEditingProject = () => {
+    setEditingProjectId('')
+    setEditingProjectName('')
+  }
+
+  const handleProjectNameKeyDown = (e: React.KeyboardEvent, projectId: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      saveProjectName(projectId)
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      cancelEditingProject()
     }
   }
 
@@ -772,7 +818,31 @@ export default function ActivityTracker() {
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
+                          {editingProjectId === project.id ? (
+                            <div className="flex-1 mr-2">
+                              <input
+                                type="text"
+                                value={editingProjectName}
+                                onChange={(e) => setEditingProjectName(e.target.value)}
+                                onKeyDown={(e) => handleProjectNameKeyDown(e, project.id)}
+                                onBlur={() => saveProjectName(project.id)}
+                                className="text-lg font-semibold text-gray-900 bg-transparent border-b-2 border-blue-500 focus:outline-none focus:border-blue-600 w-full"
+                                autoFocus
+                                placeholder="Project name..."
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex-1 group">
+                              <h3 
+                                className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors flex items-center"
+                                onClick={() => startEditingProject(project.id, project.title)}
+                                title="Click to edit project name"
+                              >
+                                {project.title}
+                                <span className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 text-sm">✏️</span>
+                              </h3>
+                            </div>
+                          )}
                           <div className="flex space-x-1">
                             <button
                               onClick={() => {
@@ -958,7 +1028,31 @@ export default function ActivityTracker() {
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-xl font-semibold text-gray-900">{project.title}</h3>
+                            {editingProjectId === project.id ? (
+                              <div className="flex-1 mr-2">
+                                <input
+                                  type="text"
+                                  value={editingProjectName}
+                                  onChange={(e) => setEditingProjectName(e.target.value)}
+                                  onKeyDown={(e) => handleProjectNameKeyDown(e, project.id)}
+                                  onBlur={() => saveProjectName(project.id)}
+                                  className="text-xl font-semibold text-gray-900 bg-transparent border-b-2 border-blue-500 focus:outline-none focus:border-blue-600 w-full"
+                                  autoFocus
+                                  placeholder="Project name..."
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex-1 group">
+                                <h3 
+                                  className="text-xl font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors flex items-center"
+                                  onClick={() => startEditingProject(project.id, project.title)}
+                                  title="Click to edit project name"
+                                >
+                                  {project.title}
+                                  <span className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 text-sm">✏️</span>
+                                </h3>
+                              </div>
+                            )}
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => {
