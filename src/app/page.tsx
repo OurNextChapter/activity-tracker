@@ -30,6 +30,10 @@ export default function ActivityTracker() {
   const [editingProjectId, setEditingProjectId] = useState<string>('')
   const [editingProjectName, setEditingProjectName] = useState<string>('')
 
+  // Drag and drop states
+  const [draggedProjectId, setDraggedProjectId] = useState<string>('')
+  const [dragOverProjectId, setDragOverProjectId] = useState<string>('')
+
   const timezones = {
     Sydney: 'Australia/Sydney',
     Stockholm: 'Europe/Stockholm',
@@ -50,8 +54,39 @@ export default function ActivityTracker() {
     return () => clearInterval(timer)
   }, [])
 
+  // localStorage helper functions
+  const saveToLocalStorage = (key: string, data: Project[] | Task[] | AdHocTask[]) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(key, JSON.stringify(data))
+      }
+    } catch (error) {
+      console.error('Error saving to localStorage:', error)
+    }
+  }
+
+  const loadFromLocalStorage = (key: string) => {
+    try {
+      if (typeof window !== 'undefined') {
+        const data = localStorage.getItem(key)
+        return data ? JSON.parse(data) : null
+      }
+    } catch (error) {
+      console.error('Error loading from localStorage:', error)
+    }
+    return null
+  }
+
   const fetchProjects = async () => {
     try {
+      // First try to load from localStorage
+      const savedProjects = loadFromLocalStorage('activity-tracker-projects')
+      if (savedProjects && savedProjects.length > 0) {
+        setProjects(savedProjects)
+        setLoading(false)
+        return
+      }
+
       // Check if Supabase is properly configured
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       if (!supabaseUrl || supabaseUrl === 'your_supabase_project_url') {
@@ -67,6 +102,7 @@ export default function ActivityTracker() {
             status: 'In Progress',
             due_date: '2025-10-15',
             archived: false,
+            order_index: 0,
             created_at: '2025-09-01T00:00:00Z',
             updated_at: '2025-09-05T00:00:00Z'
           },
@@ -80,6 +116,7 @@ export default function ActivityTracker() {
             status: 'Planning',
             due_date: '2025-11-30',
             archived: false,
+            order_index: 1,
             created_at: '2025-09-02T00:00:00Z',
             updated_at: '2025-09-05T00:00:00Z'
           },
@@ -93,6 +130,7 @@ export default function ActivityTracker() {
             status: 'In Progress',
             due_date: '2025-12-01',
             archived: false,
+            order_index: 2,
             created_at: '2025-09-03T00:00:00Z',
             updated_at: '2025-09-05T00:00:00Z'
           },
@@ -106,6 +144,7 @@ export default function ActivityTracker() {
             status: 'In Progress',
             due_date: '2025-09-30',
             archived: false,
+            order_index: 3,
             created_at: '2025-08-15T00:00:00Z',
             updated_at: '2025-09-05T00:00:00Z'
           },
@@ -119,11 +158,13 @@ export default function ActivityTracker() {
             status: 'Planning',
             due_date: null,
             archived: false,
+            order_index: 4,
             created_at: '2025-09-04T00:00:00Z',
             updated_at: '2025-09-05T00:00:00Z'
           }
         ]
         setProjects(sampleProjects)
+        saveToLocalStorage('activity-tracker-projects', sampleProjects)
         setLoading(false)
         return
       }
@@ -144,6 +185,13 @@ export default function ActivityTracker() {
 
   const fetchTasks = async () => {
     try {
+      // First try to load from localStorage
+      const savedTasks = loadFromLocalStorage('activity-tracker-tasks')
+      if (savedTasks && savedTasks.length > 0) {
+        setTasks(savedTasks)
+        return
+      }
+
       // Check if Supabase is properly configured
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       if (!supabaseUrl || supabaseUrl === 'your_supabase_project_url') {
@@ -255,6 +303,7 @@ export default function ActivityTracker() {
           }
         ]
         setTasks(sampleTasks)
+        saveToLocalStorage('activity-tracker-tasks', sampleTasks)
         return
       }
 
@@ -272,6 +321,13 @@ export default function ActivityTracker() {
 
   const fetchAdHocTasks = async () => {
     try {
+      // First try to load from localStorage
+      const savedAdHocTasks = loadFromLocalStorage('activity-tracker-adhoc-tasks')
+      if (savedAdHocTasks && savedAdHocTasks.length > 0) {
+        setAdHocTasks(savedAdHocTasks)
+        return
+      }
+
       // Check if Supabase is properly configured
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       if (!supabaseUrl || supabaseUrl === 'your_supabase_project_url') {
@@ -339,6 +395,7 @@ export default function ActivityTracker() {
           }
         ]
         setAdHocTasks(sampleAdHocTasks)
+        saveToLocalStorage('activity-tracker-adhoc-tasks', sampleAdHocTasks)
         return
       }
 
@@ -385,6 +442,7 @@ export default function ActivityTracker() {
       case 'Family': return 'bg-pink-100 text-pink-800'
       case 'Creative': return 'bg-indigo-100 text-indigo-800'
       case 'Health': return 'bg-green-100 text-green-800'
+      case 'SJT': return 'bg-teal-100 text-teal-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -401,16 +459,19 @@ export default function ActivityTracker() {
   }
 
   // New helper functions for project and task management
-  const addProject = async (projectData: Omit<Project, 'id' | 'created_at' | 'updated_at'>) => {
+  const addProject = async (projectData: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'order_index'>) => {
     try {
       const newProject: Project = {
         ...projectData,
         id: Date.now().toString(), // Simple ID generation for sample data
+        order_index: projects.length, // Add to end of list
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
       
-      setProjects(prev => [...prev, newProject])
+      const updatedProjects = [...projects, newProject]
+      setProjects(updatedProjects)
+      saveToLocalStorage('activity-tracker-projects', updatedProjects)
       setShowAddProject(false)
     } catch (error) {
       console.error('Error adding project:', error)
@@ -419,9 +480,11 @@ export default function ActivityTracker() {
 
   const archiveProject = async (projectId: string) => {
     try {
-      setProjects(prev => 
-        prev.map(p => p.id === projectId ? { ...p, archived: true, updated_at: new Date().toISOString() } : p)
+      const updatedProjects = projects.map(p => 
+        p.id === projectId ? { ...p, archived: true, updated_at: new Date().toISOString() } : p
       )
+      setProjects(updatedProjects)
+      saveToLocalStorage('activity-tracker-projects', updatedProjects)
     } catch (error) {
       console.error('Error archiving project:', error)
     }
@@ -429,9 +492,11 @@ export default function ActivityTracker() {
 
   const unarchiveProject = async (projectId: string) => {
     try {
-      setProjects(prev => 
-        prev.map(p => p.id === projectId ? { ...p, archived: false, updated_at: new Date().toISOString() } : p)
+      const updatedProjects = projects.map(p => 
+        p.id === projectId ? { ...p, archived: false, updated_at: new Date().toISOString() } : p
       )
+      setProjects(updatedProjects)
+      saveToLocalStorage('activity-tracker-projects', updatedProjects)
     } catch (error) {
       console.error('Error unarchiving project:', error)
     }
@@ -450,13 +515,13 @@ export default function ActivityTracker() {
     }
 
     try {
-      setProjects(prev => 
-        prev.map(p => p.id === projectId ? { 
-          ...p, 
-          title: editingProjectName.trim(), 
-          updated_at: new Date().toISOString() 
-        } : p)
-      )
+      const updatedProjects = projects.map(p => p.id === projectId ? { 
+        ...p, 
+        title: editingProjectName.trim(), 
+        updated_at: new Date().toISOString() 
+      } : p)
+      setProjects(updatedProjects)
+      saveToLocalStorage('activity-tracker-projects', updatedProjects)
       setEditingProjectId('')
       setEditingProjectName('')
     } catch (error) {
@@ -479,6 +544,68 @@ export default function ActivityTracker() {
     }
   }
 
+  // Drag and drop functions
+  const handleDragStart = (e: React.DragEvent, projectId: string) => {
+    setDraggedProjectId(projectId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', projectId)
+    
+    // Add visual feedback
+    const target = e.target as HTMLElement
+    target.style.opacity = '0.5'
+  }
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedProjectId('')
+    setDragOverProjectId('')
+    
+    // Reset visual feedback
+    const target = e.target as HTMLElement
+    target.style.opacity = '1'
+  }
+
+  const handleDragOver = (e: React.DragEvent, projectId: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverProjectId(projectId)
+  }
+
+  const handleDragLeave = () => {
+    setDragOverProjectId('')
+  }
+
+  const handleDrop = (e: React.DragEvent, targetProjectId: string) => {
+    e.preventDefault()
+    const draggedId = e.dataTransfer.getData('text/html')
+    
+    if (draggedId && draggedId !== targetProjectId) {
+      reorderProjects(draggedId, targetProjectId)
+    }
+    
+    setDraggedProjectId('')
+    setDragOverProjectId('')
+  }
+
+  const reorderProjects = (draggedId: string, targetId: string) => {
+    const draggedIndex = projects.findIndex(p => p.id === draggedId)
+    const targetIndex = projects.findIndex(p => p.id === targetId)
+    
+    if (draggedIndex === -1 || targetIndex === -1) return
+    
+    const newProjects = [...projects]
+    const [draggedProject] = newProjects.splice(draggedIndex, 1)
+    newProjects.splice(targetIndex, 0, draggedProject)
+    
+    // Update order indices
+    const updatedProjects = newProjects.map((project, index) => ({
+      ...project,
+      order_index: index
+    }))
+    
+    setProjects(updatedProjects)
+    saveToLocalStorage('activity-tracker-projects', updatedProjects)
+  }
+
   const addTask = async (taskData: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const newTask: Task = {
@@ -488,7 +615,9 @@ export default function ActivityTracker() {
         updated_at: new Date().toISOString()
       }
       
-      setTasks(prev => [...prev, newTask])
+      const updatedTasks = [...tasks, newTask]
+      setTasks(updatedTasks)
+      saveToLocalStorage('activity-tracker-tasks', updatedTasks)
       setShowAddTask(false)
       setSelectedProjectId('')
     } catch (error) {
@@ -498,9 +627,11 @@ export default function ActivityTracker() {
 
   const archiveTask = async (taskId: string) => {
     try {
-      setTasks(prev => 
-        prev.map(t => t.id === taskId ? { ...t, archived: true, updated_at: new Date().toISOString() } : t)
+      const updatedTasks = tasks.map(t => 
+        t.id === taskId ? { ...t, archived: true, updated_at: new Date().toISOString() } : t
       )
+      setTasks(updatedTasks)
+      saveToLocalStorage('activity-tracker-tasks', updatedTasks)
     } catch (error) {
       console.error('Error archiving task:', error)
     }
@@ -508,9 +639,11 @@ export default function ActivityTracker() {
 
   const unarchiveTask = async (taskId: string) => {
     try {
-      setTasks(prev => 
-        prev.map(t => t.id === taskId ? { ...t, archived: false, updated_at: new Date().toISOString() } : t)
+      const updatedTasks = tasks.map(t => 
+        t.id === taskId ? { ...t, archived: false, updated_at: new Date().toISOString() } : t
       )
+      setTasks(updatedTasks)
+      saveToLocalStorage('activity-tracker-tasks', updatedTasks)
     } catch (error) {
       console.error('Error unarchiving task:', error)
     }
@@ -526,7 +659,9 @@ export default function ActivityTracker() {
         updated_at: new Date().toISOString()
       }
       
-      setAdHocTasks(prev => [newTask, ...prev])
+      const updatedAdHocTasks = [newTask, ...adHocTasks]
+      setAdHocTasks(updatedAdHocTasks)
+      saveToLocalStorage('activity-tracker-adhoc-tasks', updatedAdHocTasks)
       setShowAddAdHocTask(false)
     } catch (error) {
       console.error('Error adding ad hoc task:', error)
@@ -535,9 +670,11 @@ export default function ActivityTracker() {
 
   const toggleAdHocTask = async (taskId: string, completed: boolean) => {
     try {
-      setAdHocTasks(prev => 
-        prev.map(t => t.id === taskId ? { ...t, completed: !completed, updated_at: new Date().toISOString() } : t)
+      const updatedAdHocTasks = adHocTasks.map(t => 
+        t.id === taskId ? { ...t, completed: !completed, updated_at: new Date().toISOString() } : t
       )
+      setAdHocTasks(updatedAdHocTasks)
+      saveToLocalStorage('activity-tracker-adhoc-tasks', updatedAdHocTasks)
     } catch (error) {
       console.error('Error updating ad hoc task:', error)
     }
@@ -545,9 +682,11 @@ export default function ActivityTracker() {
 
   const archiveAdHocTask = async (taskId: string) => {
     try {
-      setAdHocTasks(prev => 
-        prev.map(t => t.id === taskId ? { ...t, archived: true, updated_at: new Date().toISOString() } : t)
+      const updatedAdHocTasks = adHocTasks.map(t => 
+        t.id === taskId ? { ...t, archived: true, updated_at: new Date().toISOString() } : t
       )
+      setAdHocTasks(updatedAdHocTasks)
+      saveToLocalStorage('activity-tracker-adhoc-tasks', updatedAdHocTasks)
     } catch (error) {
       console.error('Error archiving ad hoc task:', error)
     }
@@ -555,9 +694,11 @@ export default function ActivityTracker() {
 
   const unarchiveAdHocTask = async (taskId: string) => {
     try {
-      setAdHocTasks(prev => 
-        prev.map(t => t.id === taskId ? { ...t, archived: false, updated_at: new Date().toISOString() } : t)
+      const updatedAdHocTasks = adHocTasks.map(t => 
+        t.id === taskId ? { ...t, archived: false, updated_at: new Date().toISOString() } : t
       )
+      setAdHocTasks(updatedAdHocTasks)
+      saveToLocalStorage('activity-tracker-adhoc-tasks', updatedAdHocTasks)
     } catch (error) {
       console.error('Error unarchiving ad hoc task:', error)
     }
@@ -708,6 +849,7 @@ export default function ActivityTracker() {
                       <option value="Family">Family</option>
                       <option value="Creative">Creative</option>
                       <option value="Health">Health</option>
+                      <option value="SJT">SJT</option>
                     </select>
                   </div>
                   <div>
@@ -1023,13 +1165,26 @@ export default function ActivityTracker() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects
                 .filter(project => showArchived ? project.archived : !project.archived)
+                .sort((a, b) => a.order_index - b.order_index)
                 .map((project) => {
                 const projectTasks = getProjectTasks(project.id)
                 const completedTasks = getCompletedTasksCount(project.id)
                 const progressPercentage = projectTasks.length > 0 ? (completedTasks / projectTasks.length) * 100 : 0
 
                 return (
-                  <div key={project.id} className={`bg-white rounded-lg shadow-md border-l-4 ${getPriorityColor(project.priority)} p-6 ${project.archived ? 'opacity-75' : ''}`}>
+                  <div 
+                    key={project.id} 
+                    className={`bg-white rounded-lg shadow-md border-l-4 ${getPriorityColor(project.priority)} p-6 ${project.archived ? 'opacity-75' : ''} ${
+                      dragOverProjectId === project.id ? 'ring-2 ring-blue-400 ring-opacity-75' : ''
+                    } transition-all duration-200 cursor-move`}
+                    draggable={!project.archived}
+                    onDragStart={(e) => handleDragStart(e, project.id)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => handleDragOver(e, project.id)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, project.id)}
+                    title={project.archived ? 'Archived project' : 'Drag to reorder projects'}
+                  >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">

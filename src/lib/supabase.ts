@@ -33,6 +33,7 @@ export interface Project {
   status: string
   due_date: string | null
   archived: boolean
+  order_index: number
   created_at: string
   updated_at: string
 }
