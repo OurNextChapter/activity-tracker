@@ -1,14 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase, Project, Task, AdHocTask } from '@/lib/supabase'
+import { supabase, Project, Task, UrgencyLevel, PriorityLevel, ProjectStatus, ProjectDomain } from '@/lib/supabase'
 import RollingCalendar from '@/components/RollingCalendar'
 
-// Explicit type definitions to ensure consistency
-type UrgencyLevel = 'Low' | 'Medium' | 'High'
-type PriorityLevel = 'Low' | 'Medium' | 'High' | 'Critical'
-type ProjectStatus = 'Planning' | 'In Progress' | 'Completed' | 'Blocked'
-type ProjectDomain = 'Business' | 'Creative' | 'Family' | 'Health' | 'Property'
+// Local AdHocTask interface definition
+interface AdHocTask {
+  id: string
+  title: string
+  description: string
+  completed: boolean
+  archived: boolean
+  category: 'daily' | 'weekly' | 'monthly'
+  created_at: string
+  updated_at: string
+}
 
 export default function ActivityTracker() {
   const [activeTab, setActiveTab] = useState('dashboard')
