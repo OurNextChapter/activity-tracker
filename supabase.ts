@@ -79,15 +79,4 @@ export interface AdHocTask {
   updated_at: string
 }
 
-// Domain mapping functions for Supabase integration
-export const mapDomainForStorage = (domain: ProjectDomain): ProjectDomain => {
-  // Map SJT to Family for Supabase storage
-  return domain === 'SJT' as any ? 'Family' : domain
-}
-
-export const mapDomainFromStorage = (domain: ProjectDomain): ProjectDomain => {
-  // Keep Family as Family when loading from Supabase
-  // This allows both SJT and Family projects to coexist
-  return domain
-}
 
