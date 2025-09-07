@@ -11,7 +11,6 @@ import {
   getCalendarEvents,
   CalendarEvent
 } from '@/lib/microsoft-calendar'
-
 interface CalendarEventDisplay {
   id?: string
   subject: string
