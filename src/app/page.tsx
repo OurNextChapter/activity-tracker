@@ -20,7 +20,7 @@ export default function ActivityTracker() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [projects, setProjects] = useState<Project[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
-  const [adHocTasks, setAdHocTasks] = useState<AdHocTask[]>([])
+  const [adHocTasks, setAdHocTasks] = useState<AdHocTask[]>([]) // Updated
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [selectedTimezone, setSelectedTimezone] = useState('Sydney')
