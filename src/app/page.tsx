@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase, Project, Task, UrgencyLevel, PriorityLevel, ProjectStatus, ProjectDomain } from '@/lib/supabase' 
+import { supabase, Project, Task, UrgencyLevel, PriorityLevel, ProjectStatus, ProjectDomain } from '@/lib/supabase'
 import RollingCalendar from '@/components/RollingCalendar'
 
 // Local AdHocTask interface definition
