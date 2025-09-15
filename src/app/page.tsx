@@ -91,145 +91,95 @@ export default function ActivityTracker() {
 
   const fetchProjects = async () => {
     try {
-      // Check if Supabase is properly configured
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
-        // Try to fetch from Supabase first
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .order('order_index', { ascending: true })
-        
-        if (!error && data) {
-          // Map domains from storage and set projects
-          const mappedProjects = (data as Project[]).map(project => ({
-            ...project,
-            domain: mapDomainFromStorage(project.domain)
-          }))
-          setProjects(mappedProjects)
-          // Also save to localStorage as cache
-          saveToLocalStorage('activity-tracker-projects', mappedProjects)
-          setLoading(false)
-          return
-        } else {
-          console.log('Supabase fetch failed, trying localStorage:', error)
-        }
-      }
-
-      // Fallback to localStorage
-      const savedProjects = loadFromLocalStorage('activity-tracker-projects')
-      if (savedProjects && savedProjects.length > 0) {
-        setProjects(savedProjects)
+      // Always try to fetch from Supabase first (environment variables are configured)
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('order_index', { ascending: true })
+      
+      if (!error && data) {
+        // Map domains from storage and set projects
+        const mappedProjects = (data as Project[]).map(project => ({
+          ...project,
+          domain: mapDomainFromStorage(project.domain)
+        }))
+        setProjects(mappedProjects)
+        // Also save to localStorage as cache
+        saveToLocalStorage('activity-tracker-projects', mappedProjects)
         setLoading(false)
+        return
+      } else {
+        console.log('Supabase fetch failed:', error)
+        // If Supabase fails, create initial sample data in the database
+        await createInitialData()
         return
       }
 
-      // Final fallback to sample data
-      const sampleProjects: Project[] = [
-          {
-            id: '1',
-            title: 'Website Redesign',
-            description: 'Complete redesign of company website with modern UI/UX',
-            domain: 'Business',
-            priority: 'High',
-            urgency: 'Medium',
-            status: 'In Progress',
-            due_date: '2025-10-15',
-            archived: false,
-            order_index: 0,
-            created_at: '2025-09-01T00:00:00Z',
-            updated_at: '2025-09-05T00:00:00Z'
-          },
-          {
-            id: '2',
-            title: 'Property Investment Analysis',
-            description: 'Research and analysis for potential property investments in Sydney',
-            domain: 'Property',
-            priority: 'Medium',
-            urgency: 'Low',
-            status: 'Planning',
-            due_date: '2025-11-30',
-            archived: false,
-            order_index: 1,
-            created_at: '2025-09-02T00:00:00Z',
-            updated_at: '2025-09-05T00:00:00Z'
-          },
-          {
-            id: '3',
-            title: 'Family Vacation Planning',
-            description: 'Plan and organize summer vacation for the family',
-            domain: 'Family',
-            priority: 'Medium',
-            urgency: 'High',
-            status: 'In Progress',
-            due_date: '2025-12-01',
-            archived: false,
-            order_index: 2,
-            created_at: '2025-09-03T00:00:00Z',
-            updated_at: '2025-09-05T00:00:00Z'
-          },
-          {
-            id: '4',
-            title: 'Mobile App Development',
-            description: 'Develop a new mobile application for task management',
-            domain: 'Creative',
-            priority: 'Critical',
-            urgency: 'High',
-            status: 'In Progress',
-            due_date: '2025-09-30',
-            archived: false,
-            order_index: 3,
-            created_at: '2025-08-15T00:00:00Z',
-            updated_at: '2025-09-05T00:00:00Z'
-          },
-          {
-            id: '5',
-            title: 'Health & Fitness Program',
-            description: 'Start a comprehensive health and fitness routine',
-            domain: 'Health',
-            priority: 'Medium',
-            urgency: 'Medium',
-            status: 'Planning',
-            due_date: null,
-            archived: false,
-            order_index: 4,
-            created_at: '2025-09-04T00:00:00Z',
-            updated_at: '2025-09-05T00:00:00Z'
-          }
-        ]
-        setProjects(sampleProjects)
-        saveToLocalStorage('activity-tracker-projects', sampleProjects)
-        setLoading(false)
     } catch (error) {
       console.error('Error fetching projects:', error)
-      // On error, try localStorage as final fallback
-      const savedProjects = loadFromLocalStorage('activity-tracker-projects')
-      if (savedProjects && savedProjects.length > 0) {
-        setProjects(savedProjects)
+      setLoading(false)
+    }
+  }
+
+  // Function to create initial sample data in Supabase database
+  const createInitialData = async () => {
+    try {
+      const sampleProjects = [
+        {
+          title: 'Website Redesign',
+          description: 'Complete redesign of company website with modern UI/UX',
+          domain: 'Business',
+          priority: 'High',
+          urgency: 'Medium',
+          status: 'In Progress',
+          due_date: '2025-10-15',
+          archived: false,
+          order_index: 0
+        },
+        {
+          title: 'Property Investment Analysis',
+          description: 'Research and analysis for potential property investments in Sydney',
+          domain: 'Property',
+          priority: 'Medium',
+          urgency: 'Low',
+          status: 'Planning',
+          due_date: '2025-11-30',
+          archived: false,
+          order_index: 1
+        }
+      ]
+
+      const { data, error } = await supabase
+        .from('projects')
+        .insert(sampleProjects)
+        .select()
+
+      if (!error && data) {
+        setProjects(data as Project[])
+        setLoading(false)
       }
-    } finally {
+    } catch (error) {
+      console.error('Error creating initial data:', error)
       setLoading(false)
     }
   }
 
   const fetchTasks = async () => {
     try {
-      // First try to load from localStorage
-      const savedTasks = loadFromLocalStorage('activity-tracker-tasks')
-      if (savedTasks && savedTasks.length > 0) {
-        setTasks(savedTasks)
-        return
-      }
-
-      // Use real Supabase database
-
+      // Always try to fetch from Supabase first
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .order('order_index', { ascending: true })
       
-      if (error) throw error
-      setTasks((data as Task[]) || [])
+      if (!error && data) {
+        setTasks(data as Task[])
+        // Also save to localStorage as cache
+        saveToLocalStorage('activity-tracker-tasks', data)
+        return
+      } else {
+        console.log('Supabase tasks fetch failed:', error)
+      }
     } catch (error) {
       console.error('Error fetching tasks:', error)
     }
@@ -237,22 +187,20 @@ export default function ActivityTracker() {
 
   const fetchAdHocTasks = async () => {
     try {
-      // First try to load from localStorage
-      const savedAdHocTasks = loadFromLocalStorage('activity-tracker-adhoc-tasks')
-      if (savedAdHocTasks && savedAdHocTasks.length > 0) {
-        setAdHocTasks(savedAdHocTasks)
-        return
-      }
-
-      // Use real Supabase database
-
+      // Always try to fetch from Supabase first
       const { data, error } = await supabase
         .from('adhoc_tasks')
         .select('*')
         .order('created_at', { ascending: false })
       
-      if (error) throw error
-      setAdHocTasks((data as AdHocTask[]) || [])
+      if (!error && data) {
+        setAdHocTasks(data as AdHocTask[])
+        // Also save to localStorage as cache
+        saveToLocalStorage('activity-tracker-adhoc-tasks', data)
+        return
+      } else {
+        console.log('Supabase adhoc tasks fetch failed:', error)
+      }
     } catch (error) {
       console.error('Error fetching ad hoc tasks:', error)
     }

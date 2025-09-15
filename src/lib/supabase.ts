@@ -1,35 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Check if we have valid Supabase credentials
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// Get Supabase credentials from environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Create a real or mock Supabase client
-export const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : {
-      from: () => ({
-        select: () => ({
-          order: () => ({
-            then: (callback: (result: { data: unknown[]; error: null }) => void) => callback({ data: [], error: null })
-          })
-        }),
-        insert: () => ({
-          select: () => ({
-            single: () => ({
-              then: (callback: (result: { data: null; error: { message: string } }) => void) => 
-                callback({ data: null, error: { message: 'Mock Supabase - not configured' } })
-            })
-          })
-        }),
-        update: () => ({
-          eq: () => ({
-            then: (callback: (result: { error: { message: string } }) => void) => 
-              callback({ error: { message: 'Mock Supabase - not configured' } })
-          })
-        })
-      })
-    }
+// Create Supabase client - environment variables are configured in Vercel
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // TypeScript interfaces for database tables
 export interface Project {
