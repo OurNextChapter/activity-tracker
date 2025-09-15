@@ -206,20 +206,6 @@ export default function ActivityTracker() {
     }
   }
 
-  const toggleTask = async (taskId: string, completed: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .update({ completed: !completed })
-        .eq('id', taskId)
-      
-      if (error) throw error
-      fetchTasks()
-    } catch (error) {
-      console.error('Error updating task:', error)
-    }
-  }
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'Critical': return 'border-l-red-500 bg-red-50'
