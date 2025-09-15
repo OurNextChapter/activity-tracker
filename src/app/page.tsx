@@ -489,6 +489,19 @@ export default function ActivityTracker() {
         updated_at: new Date().toISOString()
       }
       
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('tasks')
+          .insert([newTask])
+
+        if (error) {
+          console.error('Supabase task insert failed:', error)
+        }
+      }
+      
+      // Update local state regardless of Supabase success/failure
       const updatedTasks = [...tasks, newTask]
       setTasks(updatedTasks)
       saveToLocalStorage('activity-tracker-tasks', updatedTasks)
@@ -501,6 +514,23 @@ export default function ActivityTracker() {
 
   const archiveTask = async (taskId: string) => {
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ 
+            archived: true, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', taskId)
+
+        if (error) {
+          console.error('Supabase task archive failed:', error)
+        }
+      }
+
+      // Update local state regardless of Supabase success/failure
       const updatedTasks = tasks.map(t => 
         t.id === taskId ? { ...t, archived: true, updated_at: new Date().toISOString() } : t
       )
@@ -513,6 +543,23 @@ export default function ActivityTracker() {
 
   const unarchiveTask = async (taskId: string) => {
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ 
+            archived: false, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', taskId)
+
+        if (error) {
+          console.error('Supabase task unarchive failed:', error)
+        }
+      }
+
+      // Update local state regardless of Supabase success/failure
       const updatedTasks = tasks.map(t => 
         t.id === taskId ? { ...t, archived: false, updated_at: new Date().toISOString() } : t
       )
@@ -520,6 +567,35 @@ export default function ActivityTracker() {
       saveToLocalStorage('activity-tracker-tasks', updatedTasks)
     } catch (error) {
       console.error('Error unarchiving task:', error)
+    }
+  }
+
+  const toggleTask = async (taskId: string, completed: boolean) => {
+    try {
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ 
+            completed: !completed, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', taskId)
+
+        if (error) {
+          console.error('Supabase task toggle failed:', error)
+        }
+      }
+
+      // Update local state regardless of Supabase success/failure
+      const updatedTasks = tasks.map(t => 
+        t.id === taskId ? { ...t, completed: !completed, updated_at: new Date().toISOString() } : t
+      )
+      setTasks(updatedTasks)
+      saveToLocalStorage('activity-tracker-tasks', updatedTasks)
+    } catch (error) {
+      console.error('Error toggling task:', error)
     }
   }
 
@@ -533,6 +609,19 @@ export default function ActivityTracker() {
         updated_at: new Date().toISOString()
       }
       
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('adhoc_tasks')
+          .insert([newTask])
+
+        if (error) {
+          console.error('Supabase ad hoc task insert failed:', error)
+        }
+      }
+      
+      // Update local state regardless of Supabase success/failure
       const updatedAdHocTasks = [newTask, ...adHocTasks]
       setAdHocTasks(updatedAdHocTasks)
       saveToLocalStorage('activity-tracker-adhoc-tasks', updatedAdHocTasks)
@@ -544,6 +633,23 @@ export default function ActivityTracker() {
 
   const toggleAdHocTask = async (taskId: string, completed: boolean) => {
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('adhoc_tasks')
+          .update({ 
+            completed: !completed, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', taskId)
+
+        if (error) {
+          console.error('Supabase ad hoc task toggle failed:', error)
+        }
+      }
+
+      // Update local state regardless of Supabase success/failure
       const updatedAdHocTasks = adHocTasks.map(t => 
         t.id === taskId ? { ...t, completed: !completed, updated_at: new Date().toISOString() } : t
       )
@@ -556,6 +662,23 @@ export default function ActivityTracker() {
 
   const archiveAdHocTask = async (taskId: string) => {
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('adhoc_tasks')
+          .update({ 
+            archived: true, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', taskId)
+
+        if (error) {
+          console.error('Supabase ad hoc task archive failed:', error)
+        }
+      }
+
+      // Update local state regardless of Supabase success/failure
       const updatedAdHocTasks = adHocTasks.map(t => 
         t.id === taskId ? { ...t, archived: true, updated_at: new Date().toISOString() } : t
       )
@@ -568,6 +691,23 @@ export default function ActivityTracker() {
 
   const unarchiveAdHocTask = async (taskId: string) => {
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        const { error } = await supabase
+          .from('adhoc_tasks')
+          .update({ 
+            archived: false, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', taskId)
+
+        if (error) {
+          console.error('Supabase ad hoc task unarchive failed:', error)
+        }
+      }
+
+      // Update local state regardless of Supabase success/failure
       const updatedAdHocTasks = adHocTasks.map(t => 
         t.id === taskId ? { ...t, archived: false, updated_at: new Date().toISOString() } : t
       )
