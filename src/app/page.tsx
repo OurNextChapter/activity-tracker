@@ -91,13 +91,13 @@ export default function ActivityTracker() {
 
   const fetchProjects = async () => {
     try {
-      // Always try to fetch from Supabase first (environment variables are configured)
+      // Always try to fetch from Supabase first
       const { data, error } = await supabase
         .from('projects')
         .select('*')
         .order('order_index', { ascending: true })
       
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         // Map domains from storage and set projects
         const mappedProjects = (data as Project[]).map(project => ({
           ...project,
@@ -109,14 +109,15 @@ export default function ActivityTracker() {
         setLoading(false)
         return
       } else {
-        console.log('Supabase fetch failed:', error)
-        // If Supabase fails, create initial sample data in the database
+        console.log('Supabase fetch failed or no data:', error)
+        // If Supabase fails or no data, create initial sample data in the database
         await createInitialData()
         return
       }
 
     } catch (error) {
       console.error('Error fetching projects:', error)
+      // Always set loading to false even if there's an error
       setLoading(false)
     }
   }
@@ -157,9 +158,16 @@ export default function ActivityTracker() {
       if (!error && data) {
         setProjects(data as Project[])
         setLoading(false)
+      } else {
+        console.error('Error inserting initial data:', error)
+        // Even if insert fails, set loading to false and use empty projects
+        setProjects([])
+        setLoading(false)
       }
     } catch (error) {
       console.error('Error creating initial data:', error)
+      // Always set loading to false even if there's an error
+      setProjects([])
       setLoading(false)
     }
   }
